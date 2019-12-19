@@ -122,6 +122,10 @@ main_loop:
 F7 00
 1F $first_byte_00
 
+# 0x1NNN
+F7 20
+3F $goto_nnn
+
 # TODO: More ops.
 0F $op_done
 
@@ -144,6 +148,11 @@ F0
 subr_return:
 
 1E $return_from_subroutine
+0F $op_done
+
+goto_nnn:
+
+1E $jump_to_address
 0F $op_done
 
 op_done:
@@ -216,6 +225,25 @@ E9
 
 41 $PCH
 0C
+41 $PCL
+1C
+
+0E
+
+# -- END
+
+# -- Jump to address
+# Unconditional jump, set PC equal to lower 3 nibbles.
+
+jump_to_address:
+
+# High byte is in B, need to AND with 0x0F first.
+8C
+C7 0F
+41 $PCH
+7C
+
+# Low byte is in C, just set directly.
 41 $PCL
 1C
 
