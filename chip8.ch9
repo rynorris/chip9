@@ -132,11 +132,18 @@ first_byte_00:
 F7 E0
 1F $clear_screen
 
-# TODO: More ops.
-0F $op_done
+F7 EE
+1F $subr_return
+
+0F $catch_fire
 
 clear_screen:
 F0
+0F $op_done
+
+subr_return:
+
+1E $return_from_subroutine
 0F $op_done
 
 op_done:
@@ -153,19 +160,15 @@ load_opcode:
 
 # Load CHIP8 PC into DE
 41 $PCH
-EC
-7A
+6A
 41 $PCL
-EC
-FA
+EA
 
 # Load opcode into BC
 FD
-EC
-79
+69
 C8
-EC
-F9
+E9
 C8
 
 # Store back the modified CHIP8 PC which is currently in HL.
@@ -175,6 +178,46 @@ DA
 2C
 41 $PCL
 3C
+
+0E
+
+# -- END
+
+# -- Return from Subroutine
+# Increment SP by two and load values into PC.
+# Does not preserve any registers.
+
+return_from_subroutine:
+
+# Load CHIP8 SP into DE
+41 $SPH
+6A
+41 $SPL
+EA
+
+# Increment by 2.
+B8
+B8
+
+# Load bytes into BC
+FD
+69
+C8
+E9
+
+# Store new SP
+
+41 $SPH
+2C
+41 $SPL
+3C
+
+# Store new PC
+
+41 $PCH
+0C
+41 $PCL
+1C
 
 0E
 
