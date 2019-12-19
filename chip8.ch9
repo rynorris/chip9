@@ -126,6 +126,10 @@ JMPZ $first_byte_00
 CMPI 20
 JMPN $goto_nnn
 
+# 0x2NNN
+CMPI 30
+JMPN $subr_call
+
 # TODO: More ops.
 FIRE
 
@@ -153,6 +157,11 @@ JMP $op_done
 goto_nnn:
 
 CALL $jump_to_address
+JMP $op_done
+
+subr_call:
+
+CALL $call_subroutine
 JMP $op_done
 
 op_done:
@@ -233,7 +242,7 @@ RET
 # -- END
 
 # -- Jump to address
-# Unconditional jump, set PC equal to lower 3 nibbles.
+# Unconditional jump, set PC equal to lower 3 nibbles of BC.
 
 jump_to_address:
 
@@ -246,6 +255,41 @@ MOV.(HL).A
 # Low byte is in C, just set directly.
 LDX.HL $PCL
 MOV.(HL).C
+
+RET
+
+# -- END
+
+# -- Call Subroutine
+# Push PC, Jump.
+# Jump address is in BC so don't touch BC!
+
+call_subroutine:
+
+# Copy PC onto Stack.
+LDX.HL $SPH
+MOV.D.(HL)
+LDX.HL $SPL
+MOV.E.(HL)
+LDX.HL $PCH
+MOV.A.(HL)
+MOV.HL.DE
+MOV.(HL).A
+INX.DE
+LDX.HL $PCL
+MOV.A.(HL)
+MOV.HL.DE
+MOV.(HL).A
+INX.DE
+
+# Store new Stack pointer.
+LDX.HL $SPH
+MOV.(HL).D
+LDX.HL $SPL
+MOV.(HL).E
+
+# Jump to address in BC.
+CALL $jump_to_address
 
 RET
 
