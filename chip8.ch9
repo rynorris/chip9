@@ -19,8 +19,10 @@
 @PCH
 @SPL
 @SPH
-@Delay
+@IL
+@IH
 @Sound
+@Delay
 
 
 ###---START LOADER---###
@@ -110,6 +112,8 @@ MOV.(HL).A
 LDX.HL $PCL
 MOV.(HL).A
 
+CLRSCR
+
 ########################
 # -- Main Loop
 ########################
@@ -160,7 +164,30 @@ ANDI F0
 XORI 60
 JMPZ $op_set_vx
 
+# 0x7XNN
+MOV.A.B
+ANDI F0
+XORI 70
+JMPZ $op_add_to_vx
+
 # TODO: More ops.
+
+# 0xANNN
+MOV.A.B
+ANDI F0
+XORI A0
+JMPZ $op_set_i
+
+# TODO: More ops.
+
+# 0xDNNN
+MOV.A.B
+ANDI F0
+XORI D0
+JMPZ $op_draw_sprite
+
+# TODO: More ops.
+
 FIRE
 
 first_byte_00:
@@ -214,6 +241,21 @@ op_set_vx:
 MOV.A.B
 MOV.B.C
 CALL $set_vx
+JMP $op_done
+
+op_add_to_vx:
+
+CALL $add_to_vx
+JMP $op_done
+
+op_set_i:
+
+CALL $set_i
+JMP $op_done
+
+op_draw_sprite:
+
+CALL $draw_sprite
 JMP $op_done
 
 op_done:
@@ -559,6 +601,49 @@ RET
 # -- END
 
 ########################
+# -- Set I
+# Set 16-bit register I with lower 3 nibbles of BC.
+########################
+
+set_i:
+
+# Zero out top nibble.
+MOV.A.B
+ANDI 0F
+MOV.B.A
+
+LDX.HL $IH
+MOV.(HL).B
+LDX.HL $IL
+MOV.(HL).C
+
+RET
+
+# -- END
+
+########################
+# -- Add to VX
+# Args come in as 0x7XNN
+########################
+
+add_to_vx:
+
+# Store off X in D because we get a value back in B
+MOV.D.B
+
+MOV.A.D
+CALL $get_vx
+MOV.A.B
+ADD.C
+MOV.B.A
+MOV.A.D
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
 # -- Shift Left 16
 # Args:
 #  BC = value to shift.
@@ -590,6 +675,60 @@ MOV.B.A
 RET
 
 #-- END
+
+########################
+# -- Draw Sprite
+# BC = 0xDXYN
+# Draws sprite at (X, Y) with height N.
+# Sprite comes from register I.
+# Sprite pixels are XORed with screen pixels.
+# VF is set to 1 if any pixels flip from on to off, and 0 otherwise.
+########################
+
+draw_sprite:
+
+# Store X -> D
+MOV.A.B
+CALL $get_vx
+MOV.D.A
+
+# Store N -> E
+# Because we need to bit-shift, which is destructive.
+MOV.A.C
+ANDI 0F
+MOV.E.A
+
+# Get Y -> B
+LDI.B 00
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+
+# Store Y for now.
+PUSH.B
+
+# Get Pixels -> A
+LDX.HL $IH
+MOV.B.(HL)
+LDX.HL $IL
+MOV.C.(HL)
+MOV.HL.BC
+MOV.A.(HL)
+
+POP.B
+
+# TODO: XOR logic.
+
+# For CHIP9 draw call we need X in C, Y in B and pixels in A.
+MOV.C.D
+DRAW
+
+# TODO: Set VF
+
+RET
+
+# -- END
 
 # HCF
 FIRE

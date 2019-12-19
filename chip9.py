@@ -78,6 +78,10 @@ class PygameScreen():
         self.surface.set_at((x, y), self.black)
         self._maybe_draw()
 
+    def clear_pixel(self, x, y):
+        self.surface.set_at((x, y), self.white)
+        self._maybe_draw()
+
     def _maybe_draw(self):
         t = time.time() * 1000
         if t - self.last_draw > 60:
@@ -557,6 +561,8 @@ class Chip9():
                 continue
             if b == '1':
                 self.screen_out.fill_pixel(xx, y)
+            else:
+                self.screen_out.clear_pixel(xx, y)
 
     def jump(self):
         yy = self.arg(1)
@@ -785,5 +791,5 @@ if __name__ == '__main__':
         try:
             emu.step()
         except:
-            print(emu.memory[0x200:0x300])
+            time.sleep(5)
             raise

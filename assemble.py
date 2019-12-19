@@ -22,6 +22,12 @@ OPCODES = {
 
     "LDX.BC": "21", "LDX.DE": "31", "LDX.HL": "41", "LDX.SP": "22",
 
+    "PUSH.B": "81", "PUSH.C": "91", "PUSH.D": "A1", "PUSH.E": "B1",
+    "PUSH.H": "C1", "PUSH.L": "D1", "PUSH.(HL)": "E1", "PUSH.A": "F1",
+
+    "POP.B": "82", "POP.C": "92", "POP.D": "A2", "POP.E": "B2",
+    "POP.H": "C2", "POP.L": "D2", "POP.(HL)": "E2", "POP.A": "F2",
+
     "MOV.B.B": "09", "MOV.B.C": "19", "MOV.B.D": "29", "MOV.B.E": "39",
     "MOV.B.H": "49", "MOV.B.L": "59", "MOV.B.(HL)": "69", "MOV.B.A": "79",
     "MOV.C.B": "89", "MOV.C.C": "99", "MOV.C.D": "A9", "MOV.C.E": "B9",
@@ -75,7 +81,7 @@ OPCODES = {
 
     "CALL": "1E", "RET": "0E",
 
-    "CLRSCR": "F0",
+    "CLRSCR": "F0", "DRAW": "F1",
 
     "FIRE": "6C",
 }
