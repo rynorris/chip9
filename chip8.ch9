@@ -170,6 +170,12 @@ ANDI F0
 XORI 70
 JMPZ $op_add_to_vx
 
+# 0x8XNN
+MOV.A.B
+ANDI F0
+XORI 80
+JMPZ $first_byte_8x
+
 # TODO: More ops.
 
 # 0xANNN
@@ -186,7 +192,17 @@ ANDI F0
 XORI D0
 JMPZ $op_draw_sprite
 
-# TODO: More ops.
+# 0xE???
+MOV.A.B
+ANDI F0
+XORI E0
+JMPZ $first_byte_ex
+
+# 0xF???
+MOV.A.B
+ANDI F0
+XORI F0
+JMPZ $first_byte_fx
 
 FIRE
 
@@ -199,6 +215,45 @@ JMPZ $clear_screen
 
 CMPI EE
 JMPZ $subr_return
+
+FIRE
+
+first_byte_8x:
+
+MOV.A.C
+ANDI 0F
+CMPI 00
+JMPZ $op_set_vx_vy
+
+# TODO: More
+
+MOV.A.C
+ANDI 0F
+CMPI 04
+JMPZ $op_add_vx_vy
+
+# TODO: More
+
+FIRE
+
+first_byte_ex:
+
+# TODO: Implement.
+JMP $op_done
+
+FIRE
+
+first_byte_fx:
+
+# Switch on second byte
+
+# TODO: More
+
+MOV.A.C
+CMPI 1E
+JMPZ $op_add_reg_to_i
+
+# TODO: More
 
 FIRE
 
@@ -256,6 +311,21 @@ JMP $op_done
 op_draw_sprite:
 
 CALL $draw_sprite
+JMP $op_done
+
+op_add_reg_to_i:
+
+CALL $add_reg_to_i
+JMP $op_done
+
+op_set_vx_vy:
+
+CALL $set_vx_vy
+JMP $op_done
+
+op_add_vx_vy:
+
+CALL $add_vx_vy
 JMP $op_done
 
 op_done:
@@ -377,12 +447,12 @@ LDX.HL $PCH
 MOV.A.(HL)
 MOV.HL.DE
 MOV.(HL).A
-INX.DE
+DEC.E
 LDX.HL $PCL
 MOV.A.(HL)
 MOV.HL.DE
 MOV.(HL).A
-INX.DE
+DEC.E
 
 # Store new Stack pointer.
 LDX.HL $SPH
@@ -572,6 +642,27 @@ RET
 
 skip_if_regs_eq:
 
+CALL $load_vxy
+
+# Now VX is in D and VY is in E
+MOV.A.E
+CMP.D
+NJMPNZ 03
+CALL $skip_instruction
+
+RET
+
+# -- END
+
+########################
+# -- LOAD VXY
+# For BC = 0x?XY?
+# Loads VX into D, VY into E.
+# Leaves X in B, Y is destroyed.
+########################
+
+load_vxy:
+
 # Get VX into D.
 MOV.A.B
 CALL $get_vx
@@ -589,12 +680,27 @@ CALL $shift_left_16
 
 MOV.A.B
 CALL $get_vx
+MOV.E.B
+MOV.B.A
 
-# Now VX is in D and VY is in B
+RET
+
+# -- END
+
+########################
+# -- Get I
+# Set 16-bit register I into BC. (only 12bit)
+########################
+
+get_i:
+
+LDX.HL $IH
+MOV.B.(HL)
+LDX.HL $IL
+MOV.C.(HL)
 MOV.A.B
-CMP.D
-NJMPNZ 03
-CALL $skip_instruction
+ANDI 0F
+MOV.B.A
 
 RET
 
@@ -635,8 +741,62 @@ MOV.A.D
 CALL $get_vx
 MOV.A.B
 ADD.C
-MOV.B.A
+MOV.B.C
 MOV.A.D
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
+# -- Set VX = VY
+# Args come in as 0x8XY0
+########################
+
+set_vx_vy:
+
+CALL $load_vxy
+
+MOV.A.B
+MOV.B.E
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
+# -- Add VX to VY
+# Args come in as 0x8XY4
+########################
+
+add_vx_vy:
+
+CALL $load_vxy
+
+# Store off X, left in B.
+PUSH.B
+
+MOV.A.D
+ADD.E
+
+# Set carry
+NJMPC 04
+
+# No carry
+LDI.B 00
+NJMP 02
+
+# Carry
+LDI.B 01
+
+LDI.A 0F
+CALL $set_vx
+
+# Store val.
+POP.A
+MOV.B.E
 CALL $set_vx
 
 RET
@@ -687,26 +847,15 @@ RET
 
 draw_sprite:
 
-# Store X -> D
-MOV.A.B
-CALL $get_vx
-MOV.D.A
-
-# Store N -> E
-# Because we need to bit-shift, which is destructive.
+# Store off N for now.
 MOV.A.C
 ANDI 0F
-MOV.E.A
+PUSH.A
 
-# Get Y -> B
-LDI.B 00
-CALL $shift_left_16
-CALL $shift_left_16
-CALL $shift_left_16
-CALL $shift_left_16
+# Load X, Y -> D, E
+CALL $load_vxy
 
-# Store Y for now.
-PUSH.B
+draw_y_loop:
 
 # Get Pixels -> A
 LDX.HL $IH
@@ -716,19 +865,72 @@ MOV.C.(HL)
 MOV.HL.BC
 MOV.A.(HL)
 
-POP.B
-
 # TODO: XOR logic.
 
 # For CHIP9 draw call we need X in C, Y in B and pixels in A.
 MOV.C.D
+MOV.B.E
 DRAW
+
+# Loop counter.
+INC.D
+POP.A
+DEC.A
+NJMPZ 04
+PUSH.A
+JMP $draw_y_loop
 
 # TODO: Set VF
 
 RET
 
 # -- END
+#
+########################
+# -- Add reg to I
+# BC = 0xFX1E
+# Sets VF to 1 if I overflowed 12 bits.
+########################
+
+add_reg_to_i:
+
+# VX -> E
+MOV.A.B
+CALL $get_vx
+MOV.E.B
+
+# I -> BC
+CALL $get_i
+
+# Add.
+MOV.A.E
+ADDX.BC
+
+# Check overflow.
+MOV.A.B
+ANDI F0
+# Save off answer -> DE
+MOV.D.B
+MOV.E.C
+NJMPZ 04
+
+# Overflow
+LDI.B 01
+NJMP 02
+
+# No Overflow
+LDI.B 00
+
+# Store.
+LDI.A 0F
+CALL $set_vx
+MOV.B.D
+MOV.C.E
+CALL $set_i
+
+RET
+
+# --
 
 # HCF
 FIRE

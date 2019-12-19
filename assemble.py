@@ -23,10 +23,10 @@ OPCODES = {
     "LDX.BC": "21", "LDX.DE": "31", "LDX.HL": "41", "LDX.SP": "22",
 
     "PUSH.B": "81", "PUSH.C": "91", "PUSH.D": "A1", "PUSH.E": "B1",
-    "PUSH.H": "C1", "PUSH.L": "D1", "PUSH.(HL)": "E1", "PUSH.A": "F1",
+    "PUSH.H": "C1", "PUSH.L": "D1", "PUSH.(HL)": "C0", "PUSH.A": "D0",
 
     "POP.B": "82", "POP.C": "92", "POP.D": "A2", "POP.E": "B2",
-    "POP.H": "C2", "POP.L": "D2", "POP.(HL)": "E2", "POP.A": "F2",
+    "POP.H": "C2", "POP.L": "D2", "POP.(HL)": "C3", "POP.A": "D3",
 
     "MOV.B.B": "09", "MOV.B.C": "19", "MOV.B.D": "29", "MOV.B.E": "39",
     "MOV.B.H": "49", "MOV.B.L": "59", "MOV.B.(HL)": "69", "MOV.B.A": "79",
@@ -54,6 +54,11 @@ OPCODES = {
     "ADD.H": "44", "ADD.L": "54", "ADD.(HL)": "64", "ADD.A": "74",
 
     "ADDI": "A7",
+
+    "ADDX.BC": "83", "ADDX.DE": "93", "ADDX.HL": "A3",
+
+    "INC.B": "03", "INC.C": "13", "INC.D": "23", "INC.E": "33",
+    "INC.H": "43", "INC.L": "53", "INC.(HL)": "63", "INC.A": "73",
 
     "INX.BC": "A8", "INX.DE": "B8", "INX.HL": "C8",
 
@@ -110,7 +115,8 @@ class Assembler():
         self.tokens = []
 
     def log(self, msg):
-        sys.stderr.write(f"{msg}\n")
+        #sys.stderr.write(f"{msg}\n")
+        pass
 
     def assemble(self, asm):
         self.parse(asm)

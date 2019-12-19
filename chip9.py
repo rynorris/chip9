@@ -106,7 +106,7 @@ class Chip9():
         self.PC = 0
         self.FLAG = 0
         self.trace = None
-        self.tracebuf = [""] * 2000
+        self.tracebuf = [""] * 10000
         self.traceix = 0
         self.screen = {}
         self.screen_out = None
@@ -277,7 +277,6 @@ class Chip9():
             op()
         except:
             print(f"Exception at 0x{self.PC:02X}")
-            self.dump_trace()
             raise
 
 
@@ -791,5 +790,6 @@ if __name__ == '__main__':
         try:
             emu.step()
         except:
+            emu.dump_trace()
             time.sleep(5)
             raise
