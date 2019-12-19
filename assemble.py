@@ -17,6 +17,9 @@ a6 b7
 """
 
 OPCODES = {
+    "LDI.B": "20", "LDI.C": "30", "LDI.D": "40", "LDI.E": "50",
+    "LDI.H": "60", "LDI.L": "70", "LDI.(HL)": "80", "LDI.A": "90",
+
     "LDX.BC": "21", "LDX.DE": "31", "LDX.HL": "41", "LDX.SP": "22",
 
     "MOV.B.B": "09", "MOV.B.C": "19", "MOV.B.D": "29", "MOV.B.E": "39",
@@ -41,6 +44,11 @@ OPCODES = {
 
     "MOV.HL.BC": "ED", "MOV.HL.DE": "FD",
 
+    "ADD.B": "04", "ADD.C": "14", "ADD.D": "24", "ADD.E": "34",
+    "ADD.H": "44", "ADD.L": "54", "ADD.(HL)": "64", "ADD.A": "74",
+
+    "ADDI": "A7",
+
     "INX.BC": "A8", "INX.DE": "B8", "INX.HL": "C8",
 
     "DEC.B": "07", "DEC.C": "17", "DEC.D": "27", "DEC.E": "37",
@@ -48,12 +56,22 @@ OPCODES = {
 
     "ANDI": "C7",
 
+    "XORI": "E7",
+
+    "CMP.B": "86", "CMP.C": "96", "CMP.D": "A6", "CMP.E": "B6",
+    "CMP.H": "C6", "CMP.L": "D6", "CMP.(HL)": "E6", "CMP.A": "F6",
+
     "CMPI": "F7",
 
     "JMP": "0F",
 
     "JMPZ": "1F", "JMPNZ": "2F", "JMPN": "3F", "JMPNN": "4F",
     "JMPH": "5F", "JMPNH": "6F", "JMPC": "7F", "JMPNC": "8F",
+
+    "NJMP": "9F",
+
+    "NJMPZ": "AF", "NJMPNZ": "BF", "NJMPN": "CF", "NJMPNN": "DF",
+    "NJMPH": "EF", "NJMPNH": "FF", "NJMPC": "EE", "NJMPNC": "FE",
 
     "CALL": "1E", "RET": "0E",
 

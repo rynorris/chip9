@@ -110,7 +110,9 @@ MOV.(HL).A
 LDX.HL $PCL
 MOV.(HL).A
 
+########################
 # -- Main Loop
+########################
 
 main_loop:
 
@@ -123,12 +125,40 @@ CMPI 00
 JMPZ $first_byte_00
 
 # 0x1NNN
-CMPI 20
-JMPN $goto_nnn
+MOV.A.B
+ANDI F0
+XORI 10
+JMPZ $goto_nnn
 
 # 0x2NNN
-CMPI 30
-JMPN $subr_call
+MOV.A.B
+ANDI F0
+XORI 20
+JMPZ $subr_call
+
+# 0x3XNN
+MOV.A.B
+ANDI F0
+XORI 30
+JMPZ $op_skip_eq_const
+
+# 0x4XNN
+MOV.A.B
+ANDI F0
+XORI 40
+JMPZ $op_skip_neq_const
+
+# 0x5XNN
+MOV.A.B
+ANDI F0
+XORI 50
+JMPZ $op_skip_if_regs_eq
+
+# 0x6XNN
+MOV.A.B
+ANDI F0
+XORI 60
+JMPZ $op_set_vx
 
 # TODO: More ops.
 FIRE
@@ -164,15 +194,39 @@ subr_call:
 CALL $call_subroutine
 JMP $op_done
 
+op_skip_eq_const:
+
+CALL $skip_if_eq_const
+JMP $op_done
+
+op_skip_neq_const:
+
+CALL $skip_if_neq_const
+JMP $op_done
+
+op_skip_if_regs_eq:
+
+CALL $skip_if_regs_eq
+JMP $op_done
+
+op_set_vx:
+
+MOV.A.B
+MOV.B.C
+CALL $set_vx
+JMP $op_done
+
 op_done:
 
 JMP $main_loop
 
 # -- END
 
+########################
 # -- Load Opcode
 # Loads opcode into BC.
 # Does not preserve any registers.
+########################
 
 load_opcode:
 
@@ -201,9 +255,11 @@ RET
 
 # -- END
 
+########################
 # -- Return from Subroutine
 # Increment SP by two and load values into PC.
 # Does not preserve any registers.
+########################
 
 return_from_subroutine:
 
@@ -241,8 +297,10 @@ RET
 
 # -- END
 
+########################
 # -- Jump to address
 # Unconditional jump, set PC equal to lower 3 nibbles of BC.
+########################
 
 jump_to_address:
 
@@ -260,9 +318,11 @@ RET
 
 # -- END
 
+########################
 # -- Call Subroutine
 # Push PC, Jump.
 # Jump address is in BC so don't touch BC!
+########################
 
 call_subroutine:
 
@@ -294,6 +354,242 @@ CALL $jump_to_address
 RET
 
 # -- END
+
+########################
+# -- Load VX Address
+# Loads address for the register specified in lower nibble of A into HL.
+########################
+
+load_vx_addr:
+
+ANDI 0F
+
+LDX.HL $V0
+CMPI 00
+JMPZ $load_vx_addr_done
+
+LDX.HL $V1
+CMPI 01
+JMPZ $load_vx_addr_done
+
+LDX.HL $V2
+CMPI 02
+JMPZ $load_vx_addr_done
+
+LDX.HL $V3
+CMPI 03
+JMPZ $load_vx_addr_done
+
+LDX.HL $V4
+CMPI 05
+JMPZ $load_vx_addr_done
+
+LDX.HL $V5
+CMPI 05
+JMPZ $load_vx_addr_done
+
+LDX.HL $V6
+CMPI 06
+JMPZ $load_vx_addr_done
+
+LDX.HL $V7
+CMPI 07
+JMPZ $load_vx_addr_done
+
+LDX.HL $V8
+CMPI 08
+JMPZ $load_vx_addr_done
+
+LDX.HL $V9
+CMPI 09
+JMPZ $load_vx_addr_done
+
+LDX.HL $VA
+CMPI 0A
+JMPZ $load_vx_addr_done
+
+LDX.HL $VB
+CMPI 0B
+JMPZ $load_vx_addr_done
+
+LDX.HL $VC
+CMPI 0C
+JMPZ $load_vx_addr_done
+
+LDX.HL $VD
+CMPI 0D
+JMPZ $load_vx_addr_done
+
+LDX.HL $VE
+CMPI 0E
+JMPZ $load_vx_addr_done
+
+LDX.HL $VF
+CMPI 0F
+JMPZ $load_vx_addr_done
+
+FIRE
+
+load_vx_addr_done:
+
+RET
+
+# -- END
+
+########################
+# -- Set VX
+# Register number should be in lower nibble of A
+# Target value should be in B
+########################
+
+set_vx:
+
+CALL $load_vx_addr
+MOV.(HL).B
+
+RET
+
+# -- END
+
+########################
+# -- Get VX
+# Register number should be in lower nibble of A
+# Value will be loaded into B
+########################
+
+get_vx:
+
+CALL $load_vx_addr
+MOV.B.(HL)
+
+RET
+
+# -- END
+
+########################
+# -- Skip instruction
+# Moves PC forward by 2
+########################
+
+skip_instruction:
+
+LDX.HL $PCH
+MOV.D.(HL)
+LDX.HL $PCL
+MOV.E.(HL)
+INX.DE
+INX.DE
+MOV.(HL).E
+LDX.HL $PCH
+MOV.(HL).D
+
+RET
+
+# -- END
+
+########################
+# -- Skip if Equal Constant
+# Parse opcode 0x3XNN in BC
+########################
+
+skip_if_eq_const:
+
+MOV.A.B
+CALL $get_vx
+MOV.A.C
+CMP.B
+NJMPNZ 03
+CALL $skip_instruction
+
+RET
+
+# -- END
+
+########################
+# -- Skip if NOT Equal Constant
+# Parse opcode 0x4XNN in BC
+########################
+
+skip_if_neq_const:
+
+MOV.A.B
+CALL $get_vx
+MOV.A.C
+CMP.B
+NJMPZ 03
+CALL $skip_instruction
+
+RET
+
+# -- END
+
+########################
+# -- Skip if Registers equal
+# Parse opcode 0x5XY0 in BC
+########################
+
+skip_if_regs_eq:
+
+# Get VX into D.
+MOV.A.B
+CALL $get_vx
+MOV.D.B
+
+# Need to shift C right by 4 to get the Y register.
+# Do this by shifting LEFT 4 times, and shifting carry bits into B.
+# We can left-shift just by doubling.
+LDI.B 00
+
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+
+MOV.A.B
+CALL $get_vx
+
+# Now VX is in D and VY is in B
+MOV.A.B
+CMP.D
+NJMPNZ 03
+CALL $skip_instruction
+
+RET
+
+# -- END
+
+########################
+# -- Shift Left 16
+# Args:
+#  BC = value to shift.
+########################
+
+shift_left_16:
+
+# Double C
+MOV.A.C
+ADD.A
+MOV.C.A
+
+JMPC $shift_left_16_carry
+
+# No Carry
+# Double B, don't add 1.
+MOV.A.B
+ADD.A
+MOV.B.A
+RET
+
+# Carry
+shift_left_16_carry:
+# Double B, add 1.
+MOV.A.B
+ADD.A
+ADDI 01
+MOV.B.A
+RET
+
+#-- END
 
 # HCF
 FIRE
