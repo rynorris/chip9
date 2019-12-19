@@ -35,24 +35,24 @@
 31 A000
 
 # Read from [BC]
-ED
+MOV.HL.BC
 EC
 
 # Write to [ED]
-FD
-7C
+MOV.HL.DE
+MOV.(HL).A
 
 # Inc the registers.
 A8
-B8
+INX.DE
 
 # Loop unless B = 0x40
-8C
-F7 40
+MOV.A.B
+CMPI 40
 BF F5
 
 # When done, jump to the new start of the ROM.
-0F A000
+JMP A000
 
 ###---END LOADER---###
 
@@ -73,12 +73,12 @@ F9
 
 # Now read in bytes until BC hits 0.
 # Note there's no 16-bit DEC, so we have to do 2 loops.
-41 0200
+LDX.HL 0200
 
 load_rom_loop:
 E0
-7C
-C8
+MOV.(HL).A
+INX.HL
 
 # DEC C
 17
@@ -96,68 +96,68 @@ C8
 
 # Init SP to 0xEFE
 90 0E
-41 $SPH
-7C
+LDX.HL $SPH
+MOV.(HL).A
 90 FE
-41 $SPL
-7C
+LDX.HL $SPL
+MOV.(HL).A
 
 # Init PC to 0x200
 90 02
-41 $PCH
-7C
+LDX.HL $PCH
+MOV.(HL).A
 90 00
-41 $PCL
-7C
+LDX.HL $PCL
+MOV.(HL).A
 
 # -- Main Loop
 
 main_loop:
 
 # Load opcode into BC
-1E $load_opcode
+CALL $load_opcode
 
 # Switch on first byte.
-8C
-F7 00
-1F $first_byte_00
+MOV.A.B
+CMPI 00
+JMPZ $first_byte_00
 
 # 0x1NNN
-F7 20
-3F $goto_nnn
+CMPI 20
+JMPN $goto_nnn
 
 # TODO: More ops.
-0F $op_done
+FIRE
 
 first_byte_00:
 
 # Switch on second byte.
-9C
-F7 E0
-1F $clear_screen
+MOV.A.C
+CMPI E0
+JMPZ $clear_screen
 
-F7 EE
-1F $subr_return
+CMPI EE
+JMPZ $subr_return
 
-0F $catch_fire
+FIRE
 
 clear_screen:
-F0
-0F $op_done
+CLRSCR
+JMP $op_done
 
 subr_return:
 
-1E $return_from_subroutine
-0F $op_done
+CALL $return_from_subroutine
+JMP $op_done
 
 goto_nnn:
 
-1E $jump_to_address
-0F $op_done
+CALL $jump_to_address
+JMP $op_done
 
 op_done:
 
-0F $main_loop
+JMP $main_loop
 
 # -- END
 
@@ -168,27 +168,27 @@ op_done:
 load_opcode:
 
 # Load CHIP8 PC into DE
-41 $PCH
-6A
-41 $PCL
-EA
+LDX.HL $PCH
+MOV.D.(HL)
+LDX.HL $PCL
+MOV.E.(HL)
 
 # Load opcode into BC
-FD
-69
-C8
-E9
-C8
+MOV.HL.DE
+MOV.B.(HL)
+INX.HL
+MOV.C.(HL)
+INX.HL
 
 # Store back the modified CHIP8 PC which is currently in HL.
-4A
-DA
-41 $PCH
-2C
-41 $PCL
-3C
+MOV.D.H
+MOV.E.L
+LDX.HL $PCH
+MOV.(HL).D
+LDX.HL $PCL
+MOV.(HL).E
 
-0E
+RET
 
 # -- END
 
@@ -199,36 +199,36 @@ DA
 return_from_subroutine:
 
 # Load CHIP8 SP into DE
-41 $SPH
-6A
-41 $SPL
-EA
+LDX.HL $SPH
+MOV.D.(HL)
+LDX.HL $SPL
+MOV.E.(HL)
 
 # Increment by 2.
-B8
-B8
+INX.DE
+INX.DE
 
 # Load bytes into BC
-FD
-69
-C8
-E9
+MOV.HL.DE
+MOV.B.(HL)
+INX.HL
+MOV.C.(HL)
 
 # Store new SP
 
-41 $SPH
-2C
-41 $SPL
-3C
+LDX.HL $SPH
+MOV.(HL).D
+LDX.HL $SPL
+MOV.(HL).E
 
 # Store new PC
 
-41 $PCH
-0C
-41 $PCL
-1C
+LDX.HL $PCH
+MOV.(HL).B
+LDX.HL $PCL
+MOV.(HL).C
 
-0E
+RET
 
 # -- END
 
@@ -238,19 +238,18 @@ E9
 jump_to_address:
 
 # High byte is in B, need to AND with 0x0F first.
-8C
-C7 0F
-41 $PCH
-7C
+MOV.A.B
+ANDI 0F
+LDX.HL $PCH
+MOV.(HL).A
 
 # Low byte is in C, just set directly.
-41 $PCL
-1C
+LDX.HL $PCL
+MOV.(HL).C
 
-0E
+RET
 
 # -- END
 
 # HCF
-catch_fire:
-6C
+FIRE

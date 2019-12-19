@@ -16,6 +16,52 @@ a6 b7
 98 $label
 """
 
+OPCODES = {
+    "LDX.BC": "21", "LDX.DE": "31", "LDX.HL": "41", "LDX.SP": "22",
+
+    "MOV.B.B": "09", "MOV.B.C": "19", "MOV.B.D": "29", "MOV.B.E": "39",
+    "MOV.B.H": "49", "MOV.B.L": "59", "MOV.B.(HL)": "69", "MOV.B.A": "79",
+    "MOV.C.B": "89", "MOV.C.C": "99", "MOV.C.D": "A9", "MOV.C.E": "B9",
+    "MOV.C.H": "C9", "MOV.C.L": "D9", "MOV.C.(HL)": "E9", "MOV.C.A": "F9",
+
+    "MOV.D.B": "0A", "MOV.D.C": "1A", "MOV.D.D": "2A", "MOV.D.E": "3A",
+    "MOV.D.H": "4A", "MOV.D.L": "5A", "MOV.D.(HL)": "6A", "MOV.D.A": "7A",
+    "MOV.E.B": "8A", "MOV.E.C": "9A", "MOV.E.D": "AA", "MOV.E.E": "BA",
+    "MOV.E.H": "CA", "MOV.E.L": "DA", "MOV.E.(HL)": "EA", "MOV.E.A": "FA",
+
+    "MOV.H.B": "0B", "MOV.H.C": "1B", "MOV.H.D": "2B", "MOV.H.E": "3B",
+    "MOV.H.H": "4B", "MOV.H.L": "5B", "MOV.H.(HL)": "6B", "MOV.H.A": "7B",
+    "MOV.L.B": "8B", "MOV.L.C": "9B", "MOV.L.D": "AB", "MOV.L.E": "BB",
+    "MOV.L.H": "CB", "MOV.L.L": "DB", "MOV.L.(HL)": "EB", "MOV.L.A": "FB",
+
+    "MOV.(HL).B": "0C", "MOV.(HL).C": "1C", "MOV.(HL).D": "2C", "MOV.(HL).E": "3C",
+    "MOV.(HL).H": "4C", "MOV.(HL).L": "5C", "MOV.(HL).A": "7C",
+    "MOV.A.B": "8C", "MOV.A.C": "9C", "MOV.A.D": "AC", "MOV.A.E": "BC",
+    "MOV.A.H": "CC", "MOV.A.L": "DC", "MOV.A.(HL)": "EC", "MOV.A.A": "FC",
+
+    "MOV.HL.BC": "ED", "MOV.HL.DE": "FD",
+
+    "INX.BC": "A8", "INX.DE": "B8", "INX.HL": "C8",
+
+    "DEC.B": "07", "DEC.C": "17", "DEC.D": "27", "DEC.E": "37",
+    "DEC.H": "47", "DEC.L": "57", "DEC.(HL)": "67", "DEC.A": "77",
+
+    "ANDI": "C7",
+
+    "CMPI": "F7",
+
+    "JMP": "0F",
+
+    "JMPZ": "1F", "JMPNZ": "2F", "JMPN": "3F", "JMPNN": "4F",
+    "JMPH": "5F", "JMPNH": "6F", "JMPC": "7F", "JMPNC": "8F",
+
+    "CALL": "1E", "RET": "0E",
+
+    "CLRSCR": "F0",
+
+    "FIRE": "6C",
+}
+
 
 class Token():
     def __init__(self, typ, val):
@@ -135,6 +181,8 @@ class Assembler():
             return Token("var", s[1:])
         elif s.endswith(":"):
             return Token("label", s[:-1])
+        elif s in OPCODES:
+            return Token("byte", OPCODES[s])
         elif len(s) == 2:
             return Token("byte", s)
         elif len(s) == 4:
