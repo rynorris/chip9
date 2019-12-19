@@ -1,0 +1,185 @@
+# Define our variables.
+@V0
+@V1
+@V2
+@V3
+@V4
+@V5
+@V6
+@V7
+@V8
+@V9
+@VA
+@VB
+@VC
+@VD
+@VE
+@VF
+@PCL
+@PCH
+@SPL
+@SPH
+@Delay
+@Sound
+
+
+###---START LOADER---###
+
+# This first part cannot use labels since we haven't copied the binary
+# to the correct base address yet.
+# Copy the emulator program to the base addr 0xA000
+# BC = src, DE = tgt
+# Remember our ROM starts at 0x325
+
+21 0339
+31 A000
+
+# Read from [BC]
+ED
+EC
+
+# Write to [ED]
+FD
+7C
+
+# Inc the registers.
+A8
+B8
+
+# Loop unless B = 0x40
+8C
+F7 40
+BF F5
+
+# When done, jump to the new start of the ROM.
+0F A000
+
+###---END LOADER---###
+
+# Now enter CHIP8 Emulator land.
+
+
+# -- Load ROM
+
+# First job = load the ROM from stdin into memory at 0x200.
+# Read number of bytes in ROM.  MSB then LSB
+# e.g. if the ROM is 1283 bytes, enter 0x05 and then 0x03
+# Store ROM size in BC
+E0
+79
+E0
+F9
+17
+
+# Now read in bytes until BC hits 0.
+# Note there's no 16-bit DEC, so we have to do 2 loops.
+41 0200
+
+load_rom_loop:
+E0
+7C
+C8
+
+# DEC C
+17
+
+# If no borrow, loop.
+7F $load_rom_loop
+
+# If carry, DEC B
+07
+
+# If no borrow, loop.
+7F $load_rom_loop
+
+# -- Initialization Routine
+
+# Init SP to 0xEFE
+90 0E
+41 $SPH
+7C
+90 FE
+41 $SPL
+7C
+
+# Init PC to 0x200
+90 02
+41 $PCH
+7C
+90 00
+41 $PCL
+7C
+
+# -- Main Loop
+
+main_loop:
+
+# Load opcode into BC
+1E $load_opcode
+
+# Switch on first byte.
+8C
+F7 00
+1F $first_byte_00
+
+# TODO: More ops.
+0F $op_done
+
+first_byte_00:
+
+# Switch on second byte.
+9C
+F7 E0
+1F $clear_screen
+
+# TODO: More ops.
+0F $op_done
+
+clear_screen:
+F0
+0F $op_done
+
+op_done:
+
+0F $main_loop
+
+# -- END
+
+# -- Load Opcode
+# Loads opcode into BC.
+# Does not preserve any registers.
+
+load_opcode:
+
+# Load CHIP8 PC into DE
+41 $PCH
+EC
+7A
+41 $PCL
+EC
+FA
+
+# Load opcode into BC
+FD
+EC
+79
+C8
+EC
+F9
+C8
+
+# Store back the modified CHIP8 PC which is currently in HL.
+4A
+DA
+41 $PCH
+2C
+41 $PCL
+3C
+
+0E
+
+# -- END
+
+# HCF
+catch_fire:
+6C
