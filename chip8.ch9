@@ -123,7 +123,7 @@ CLRSCR
 main_loop:
 
 # Spin to adjust timing.
-LDI.A 0xFF
+LDI.A 0xAF
 DEC.A
 NJMPNZ 0xFD
 
@@ -230,6 +230,7 @@ FIRE
 
 first_byte_8x:
 
+
 MOV.A.C
 ANDI 0F
 CMPI 00
@@ -249,10 +250,10 @@ FIRE
 first_byte_ex:
 
 MOV.A.C
+
 CMPI 9E
 JMPZ $op_skip_if_vx_pressed
 
-MOV.A.C
 CMPI A1
 JMPZ $op_skip_if_vx_not_pressed
 
@@ -262,27 +263,26 @@ first_byte_fx:
 
 # Switch on second byte
 
+MOV.A.C
+
 # TODO: More
 
-MOV.A.C
 CMPI 07
 JMPZ $op_get_delay
 
 # TODO: More
 
-MOV.A.C
 CMPI 15
 JMPZ $op_set_delay
 
 # TODO: More
 
-MOV.A.C
 CMPI 1E
 JMPZ $op_add_reg_to_i
 
+
 # TODO: More
 
-MOV.A.C
 CMPI 65
 JMPZ $op_load_registers
 
