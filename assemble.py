@@ -25,8 +25,12 @@ OPCODES = {
     "PUSH.B": "81", "PUSH.C": "91", "PUSH.D": "A1", "PUSH.E": "B1",
     "PUSH.H": "C1", "PUSH.L": "D1", "PUSH.(HL)": "C0", "PUSH.A": "D0",
 
+    "PUSH.BC": "51", "PUSH.DE": "61", "PUSH.HL": "71",
+
     "POP.B": "82", "POP.C": "92", "POP.D": "A2", "POP.E": "B2",
     "POP.H": "C2", "POP.L": "D2", "POP.(HL)": "C3", "POP.A": "D3",
+
+    "POP.BC": "52", "POP.DE": "62", "POP.HL": "72",
 
     "MOV.B.B": "09", "MOV.B.C": "19", "MOV.B.D": "29", "MOV.B.E": "39",
     "MOV.B.H": "49", "MOV.B.L": "59", "MOV.B.(HL)": "69", "MOV.B.A": "79",

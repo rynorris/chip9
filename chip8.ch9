@@ -855,15 +855,20 @@ PUSH.A
 # Load X, Y -> D, E
 CALL $load_vxy
 
-draw_y_loop:
-
-# Get Pixels -> A
+# Use BC as pixel ptr.
 LDX.HL $IH
 MOV.B.(HL)
 LDX.HL $IL
 MOV.C.(HL)
+
+draw_y_loop:
+
+# Get Pixels -> A
 MOV.HL.BC
 MOV.A.(HL)
+
+# Store BC (pixel ptr)
+PUSH.BC
 
 # TODO: XOR logic.
 
@@ -873,7 +878,9 @@ MOV.B.E
 DRAW
 
 # Loop counter.
-INC.D
+POP.BC
+INX.BC
+INC.E
 POP.A
 DEC.A
 NJMPZ 04
@@ -885,7 +892,7 @@ JMP $draw_y_loop
 RET
 
 # -- END
-#
+
 ########################
 # -- Add reg to I
 # BC = 0xFX1E
