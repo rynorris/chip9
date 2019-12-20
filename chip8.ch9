@@ -287,6 +287,11 @@ ANDI 0F
 CMPI 05
 JMPZ $op_sub_vx_vy
 
+MOV.A.C
+ANDI 0F
+CMPI 06
+JMPZ $op_rsh_vx
+
 # TODO: More
 
 FIRE
@@ -432,6 +437,11 @@ JMP $op_done
 op_sub_vx_vy:
 
 CALL $sub_vx_vy
+JMP $op_done
+
+op_rsh_vx:
+
+CALL $rsh_vx
 JMP $op_done
 
 op_set_delay:
@@ -1134,6 +1144,48 @@ CALL $set_vx
 RET
 
 # -- END
+
+
+########################
+# -- Shift VX right.
+########################
+
+rsh_vx:
+
+# Store X in D for later.
+MOV.D.B
+
+# Load VX -> BC
+MOV.A.B
+CALL $get_vx
+MOV.C.B
+LDI.B 00
+
+# LSH 7 times.
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+CALL $shift_left_16
+
+# Now B has the right-shifted VX, and C is non-zero if we have a carry.
+MOV.A.D
+CALL $set_vx
+
+LDX.HL $VF
+LDI.(HL) 00
+MOV.A.C
+CMPI 00
+NJMPZ 02
+# non-zero => carry
+LDI.(HL) 01
+
+RET
+
+# -- END
+
 
 ########################
 # -- Shift Left 16
