@@ -214,7 +214,11 @@ ANDI F0
 XORI 80
 JMPZ $first_byte_8x
 
-# TODO: More ops.
+# 0x9XY0
+MOV.A.B
+ANDI F0
+XORI 90
+JMPZ $op_skip_if_regs_neq
 
 # 0xANNN
 MOV.A.B
@@ -341,7 +345,8 @@ JMPZ $op_load_font_addr
 CMPI 33
 JMPZ $op_set_bcd
 
-# TODO: FX55 not implemented
+CMPI 55
+JMPZ $op_save_registers
 
 CMPI 65
 JMPZ $op_load_registers
@@ -386,6 +391,11 @@ JMP $op_done
 op_skip_if_regs_eq:
 
 CALL $skip_if_regs_eq
+JMP $op_done
+
+op_skip_if_regs_neq:
+
+CALL $skip_if_regs_neq
 JMP $op_done
 
 op_set_vx:
@@ -468,6 +478,11 @@ JMP $op_done
 op_skip_if_vx_not_pressed:
 
 CALL $skip_if_vx_not_pressed
+JMP $op_done
+
+op_save_registers:
+
+CALL $save_registers
 JMP $op_done
 
 op_load_registers:
@@ -840,6 +855,25 @@ CALL $load_vxy
 MOV.A.E
 CMP.D
 NJMPNZ 03
+CALL $skip_instruction
+
+RET
+
+# -- END
+
+########################
+# -- Skip if Registers not equal
+# Parse opcode 0x9XY0 in BC
+########################
+
+skip_if_regs_neq:
+
+CALL $load_vxy
+
+# Now VX is in D and VY is in E
+MOV.A.E
+CMP.D
+NJMPZ 03
 CALL $skip_instruction
 
 RET
@@ -1591,8 +1625,55 @@ RET
 # -- END
 
 ########################
-# -- Load registers.
+# -- Save registers.
 # BC = 0xFX55
+# Saves registers from V0 to VX with values in memory starting from I.
+########################
+
+save_registers:
+
+# Move X into D.
+MOV.A.B
+ANDI 0F
+MOV.D.A
+
+# Load I -> BC -> HL
+CALL $get_i
+MOV.HL.BC
+
+# Reg to set -> C
+LDI.C 00
+
+save_registers_loop:
+
+# Get register VD
+MOV.A.C
+# get_vx will clobber HL, so store it off.
+PUSH.HL
+CALL $get_vx
+POP.HL
+MOV.(HL).B
+
+# Break if D == 0
+MOV.A.D
+CMPI 00
+JMPZ $save_registers_ret
+
+# Otherwise poke variables and loop.
+DEC.D
+INC.C
+INX.HL
+JMP $save_registers_loop
+
+save_registers_ret:
+
+RET
+
+# -- END
+
+########################
+# -- Load registers.
+# BC = 0xFX65
 # Loads registers from V0 to VX with values in memory starting from I.
 ########################
 
