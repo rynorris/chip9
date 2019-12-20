@@ -99,6 +99,23 @@ INX.HL
 
 # -- Initialization Routine
 
+# Copy fonts to 0x0000
+LDX.BC $font_sprites
+LDX.DE 0000
+
+copy_font_loop:
+
+MOV.HL.BC
+MOV.A.(HL)
+MOV.HL.DE
+MOV.(HL).A
+INX.BC
+INX.DE
+
+MOV.A.E
+CMPI 50
+JMPNZ $copy_font_loop
+
 # Init SP to 0xEFE
 90 0E
 LDX.HL $SPH
@@ -245,7 +262,20 @@ ANDI 0F
 CMPI 00
 JMPZ $op_set_vx_vy
 
-# TODO: More
+MOV.A.C
+ANDI 0F
+CMPI 01
+JMPZ $op_or_vx_vy
+
+MOV.A.C
+ANDI 0F
+CMPI 02
+JMPZ $op_and_vx_vy
+
+MOV.A.C
+ANDI 0F
+CMPI 03
+JMPZ $op_xor_vx_vy
 
 MOV.A.C
 ANDI 0F
@@ -274,12 +304,10 @@ first_byte_fx:
 
 MOV.A.C
 
-# TODO: More
-
 CMPI 07
 JMPZ $op_get_delay
 
-# TODO: More
+# TODO: FX0A not implemented.
 
 CMPI 15
 JMPZ $op_set_delay
@@ -297,7 +325,7 @@ JMPZ $op_load_font_addr
 CMPI 33
 JMPZ $op_set_bcd
 
-# TODO: More
+# TODO: FX55 not implemented
 
 CMPI 65
 JMPZ $op_load_registers
@@ -368,6 +396,21 @@ JMP $op_done
 op_set_vx_vy:
 
 CALL $set_vx_vy
+JMP $op_done
+
+op_or_vx_vy:
+
+CALL $or_vx_vy
+JMP $op_done
+
+op_and_vx_vy:
+
+CALL $and_vx_vy
+JMP $op_done
+
+op_xor_vx_vy:
+
+CALL $xor_vx_vy
 JMP $op_done
 
 op_add_vx_vy:
@@ -468,15 +511,17 @@ MOV.D.(HL)
 LDX.HL $SPL
 MOV.E.(HL)
 
-# Increment by 2.
-INX.DE
-INX.DE
 
-# Load bytes into BC
+# Load bytes into BC and increment SP.
+# 0 the stack as we go to make debugging easier.
+INX.DE
 MOV.HL.DE
-MOV.B.(HL)
-INX.HL
 MOV.C.(HL)
+LDI.(HL) 00
+INX.DE
+INX.HL
+MOV.B.(HL)
+LDI.(HL) 00
 
 # Store new SP
 
@@ -485,12 +530,8 @@ MOV.(HL).D
 LDX.HL $SPL
 MOV.(HL).E
 
-# Store new PC
-
-LDX.HL $PCH
-MOV.(HL).B
-LDX.HL $PCL
-MOV.(HL).C
+# Jump to address in BC.
+CALL $jump_to_address
 
 RET
 
@@ -525,20 +566,28 @@ RET
 
 call_subroutine:
 
-# Copy PC onto Stack.
+# Load SP into DE
 LDX.HL $SPH
 MOV.D.(HL)
 LDX.HL $SPL
 MOV.E.(HL)
+
+# PCH -> A -> Stack
 LDX.HL $PCH
 MOV.A.(HL)
 MOV.HL.DE
 MOV.(HL).A
+
+# Dec Stack.
 DEC.E
+
+# PCL -> A -> Stack
 LDX.HL $PCL
 MOV.A.(HL)
 MOV.HL.DE
 MOV.(HL).A
+
+# Dec Stack.
 DEC.E
 
 # Store new Stack pointer.
@@ -850,7 +899,7 @@ CALL $get_vx
 LDX.HL $Delay
 MOV.(HL).B
 LDX.HL $DelayTick
-LDI.(HL) 0xFF
+LDI.(HL) 0x10
 
 RET
 
@@ -883,7 +932,7 @@ LDX.HL $DelayTick
 DEC.(HL)
 JMPNZ $dec_delay_ret
 
-LDI.(HL) 0xFF
+LDI.(HL) 0x10
 LDX.HL $Delay
 MOV.A.(HL)
 CMPI 00
@@ -930,6 +979,66 @@ CALL $load_vxy
 
 MOV.A.B
 MOV.B.E
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
+# -- VX | VY
+# Args come in as 0x8XY1
+########################
+
+or_vx_vy:
+
+CALL $load_vxy
+
+MOV.A.E
+ORR.D
+MOV.A.B
+MOV.B.D
+
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
+# -- VX & VY
+# Args come in as 0x8XY1
+########################
+
+and_vx_vy:
+
+CALL $load_vxy
+
+MOV.A.E
+AND.D
+MOV.A.B
+MOV.B.D
+
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
+# -- VX ^ VY
+# Args come in as 0x8XY1
+########################
+
+xor_vx_vy:
+
+CALL $load_vxy
+
+MOV.A.E
+XOR.D
+MOV.A.B
+MOV.B.D
+
 CALL $set_vx
 
 RET
@@ -1134,17 +1243,17 @@ MOV.C.(HL)
 # Load mask into D.
 MOV.A.B
 
-CMPI 02
+CMPI 01
 # CHIP9 Up
 LDI.D 80
 JMPZ $check_key_mask_selected
 
-CMPI 04
+CMPI 03
 # CHIP9 Left
 LDI.D 40
 JMPZ $check_key_mask_selected
 
-CMPI 08
+CMPI 04
 # CHIP9 Down
 LDI.D 20
 JMPZ $check_key_mask_selected
@@ -1154,7 +1263,7 @@ CMPI 06
 LDI.D 10
 JMPZ $check_key_mask_selected
 
-CMPI 05
+CMPI 08
 # CHIP9 A
 LDI.D 08
 JMPZ $check_key_mask_selected
@@ -1164,7 +1273,7 @@ CMPI 0F
 LDI.D 04
 JMPZ $check_key_mask_selected
 
-CMPI 0E
+CMPI 0C
 # CHIP9 Start
 LDI.D 02
 JMPZ $check_key_mask_selected
@@ -1305,27 +1414,32 @@ MOV.A.B
 CALL $get_vx
 MOV.A.B
 
-LDX.BC $font_sprite_0
+# Fonts are loaded into memory starting at 0x0000
+# Each is 5 bytes.
+
+LDX.BC 0000
 CMPI 00
 JMPZ $load_font_addr_ret
 
-LDX.BC $font_sprite_1
+LDX.BC 0005
 CMPI 01
 JMPZ $load_font_addr_ret
 
-LDX.BC $font_sprite_2
+LDX.BC 000A
 CMPI 02
 JMPZ $load_font_addr_ret
 
-LDX.BC $font_sprite_3
+LDX.BC 000F
 CMPI 03
 JMPZ $load_font_addr_ret
 
-LDX.BC $font_sprite_4
+LDX.BC 0014
 CMPI 04
 JMPZ $load_font_addr_ret
 
 load_font_addr_ret:
+
+CALL $set_i
 
 RET
 
@@ -1336,35 +1450,31 @@ RET
 # -- FONT DATA
 ########################
 
-font_sprite_0:
+font_sprites:
 11110000
 10010000
 10010000
 10010000
 11110000
 
-font_sprite_1:
 00100000
 01100000
 00100000
 00100000
 01110000
 
-font_sprite_2:
 11110000
 00010000
 11110000
 10000000
 11110000
 
-font_sprite_3:
 11110000
 00010000
 11110000
 00010000
 11110000
 
-font_sprite_4:
 10010000
 10010000
 11110000

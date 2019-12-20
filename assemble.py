@@ -74,6 +74,14 @@ OPCODES = {
 
     "ANDI": "C7",
 
+    "ORR.B": "85", "ORR.C": "95", "ORR.D": "A5", "ORR.E": "B5",
+    "ORR.H": "C5", "ORR.L": "D5", "ORR.(HL)": "E5", "ORR.A": "F5",
+
+    "ORI": "D7",
+
+    "XOR.B": "06", "XOR.C": "16", "XOR.D": "26", "XOR.E": "36",
+    "XOR.H": "46", "XOR.L": "56", "XOR.(HL)": "66", "XOR.A": "76",
+
     "XORI": "E7",
 
     "CMP.B": "86", "CMP.C": "96", "CMP.D": "A6", "CMP.E": "B6",
@@ -122,7 +130,7 @@ class Assembler():
         self.tokens = []
 
     def log(self, msg):
-        #sys.stderr.write(f"{msg}\n")
+        sys.stderr.write(f"{msg}\n")
         pass
 
     def assemble(self, asm):
@@ -130,7 +138,6 @@ class Assembler():
 
         while self.tokens:
             tok = self.next_token()
-            self.log(tok)
 
             if tok.typ == "def":
                 if tok.val in self.variables:
@@ -231,6 +238,10 @@ class Assembler():
         else:
             raise Exception(f"Cannot parse token: {s}")
 
+    def dump_labels(self):
+        for name, addr in self.labels.items():
+            self.log(f"{name} = 0x{addr:04X}")
+
 
 if __name__ == "__main__":
     path = sys.argv[1]
@@ -242,3 +253,6 @@ if __name__ == "__main__":
     prog = assembler.assemble(asm)
     with open(out, "wb") as f:
         f.write(prog)
+
+    assembler.dump_labels()
+

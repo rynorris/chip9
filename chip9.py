@@ -789,6 +789,15 @@ if __name__ == '__main__':
         while True:
             try:
                 emu.step()
+                if emu.PC == 0xA04F:
+                    if emu.B >= 0x20 and emu.B < 0x30:
+                        print("CALL", emu.memory[0xEF0:0xEFF])
+                        print(emu.memory[0xE010:0xE020])
+                    elif emu.B == 0x00 and emu.C == 0xEE:
+                        print("RET", emu.memory[0xEF0:0xEFF])
+                        print(emu.memory[0xE010:0xE020])
+                    elif emu.B == 0x12 and emu.C == 0x22:
+                        raise Exception("ADS")
 
                 # Handle input every few instructions.
                 ix = (ix + 1) % 10000
@@ -845,3 +854,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Closing!")
         emu.dump_trace()
+        print(emu.memory[:64])
