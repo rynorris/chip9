@@ -69,6 +69,9 @@ OPCODES = {
     "DEC.B": "07", "DEC.C": "17", "DEC.D": "27", "DEC.E": "37",
     "DEC.H": "47", "DEC.L": "57", "DEC.(HL)": "67", "DEC.A": "77",
 
+    "AND.B": "05", "AND.C": "15", "AND.D": "25", "AND.E": "35",
+    "AND.H": "45", "AND.L": "55", "AND.(HL)": "65", "AND.A": "75",
+
     "ANDI": "C7",
 
     "XORI": "E7",

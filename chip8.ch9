@@ -23,6 +23,8 @@
 @IH
 @Sound
 @Delay
+@DelayTick
+@Keys
 
 
 ###---START LOADER---###
@@ -119,6 +121,9 @@ CLRSCR
 ########################
 
 main_loop:
+
+# Decrement delay timer.
+CALL $dec_delay
 
 # Load opcode into BC
 CALL $load_opcode
@@ -238,14 +243,31 @@ FIRE
 
 first_byte_ex:
 
-# TODO: Implement.
-JMP $op_done
+MOV.A.C
+CMPI 9E
+JMPZ $op_skip_if_vx_pressed
+
+MOV.A.C
+CMPI A1
+JMPZ $op_skip_if_vx_not_pressed
 
 FIRE
 
 first_byte_fx:
 
 # Switch on second byte
+
+# TODO: More
+
+MOV.A.C
+CMPI 07
+JMPZ $op_get_delay
+
+# TODO: More
+
+MOV.A.C
+CMPI 15
+JMPZ $op_set_delay
 
 # TODO: More
 
@@ -326,6 +348,26 @@ JMP $op_done
 op_add_vx_vy:
 
 CALL $add_vx_vy
+JMP $op_done
+
+op_set_delay:
+
+CALL $set_delay
+JMP $op_done
+
+op_get_delay:
+
+CALL $get_delay
+JMP $op_done
+
+op_skip_if_vx_pressed:
+
+CALL $skip_if_vx_pressed
+JMP $op_done
+
+op_skip_if_vx_not_pressed:
+
+CALL $skip_if_vx_not_pressed
 JMP $op_done
 
 op_done:
@@ -728,6 +770,65 @@ RET
 # -- END
 
 ########################
+# -- Set Delay = VX
+# BC = 0xFX15
+########################
+
+set_delay:
+
+MOV.A.B
+CALL $get_vx
+LDX.HL $Delay
+MOV.(HL).B
+LDX.HL $DelayTick
+LDI.(HL) 0xFF
+
+RET
+
+# -- END
+
+########################
+# -- Set VX = Delay
+# BC = 0xFX07
+########################
+
+get_delay:
+
+MOV.A.B
+LDX.HL $Delay
+MOV.B.(HL)
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
+# -- Decrement Delay
+# Value ends up in B
+########################
+
+dec_delay:
+
+LDX.HL $DelayTick
+DEC.(HL)
+JMPNZ $dec_delay_ret
+
+LDI.(HL) 0xFF
+LDX.HL $Delay
+MOV.A.(HL)
+CMPI 00
+JMPZ $dec_delay_ret
+
+DEC.(HL)
+
+dec_delay_ret:
+
+RET
+
+# -- END
+
+########################
 # -- Add to VX
 # Args come in as 0x7XNN
 ########################
@@ -937,7 +1038,112 @@ CALL $set_i
 
 RET
 
-# --
+# -- END
+
+########################
+# -- Get key state of key VX.
+# BC = 0xEX??
+# Note the CHIP9 only has 8 keys, so we can only emulate 8 keys.
+# The @Keys variable has the key states in bits.
+# We AND with the relevant mask to extract the state.
+# The state of the key will be in the Z flag.
+# Z if not pressed, NZ if pressed.
+########################
+
+check_key:
+
+# Load VX -> B
+MOV.A.B
+CALL $get_vx
+
+# Load key states -> C
+LDX.HL $Keys
+MOV.C.(HL)
+
+# Select a mask. (i.e. key mapping)
+# For now just map 1 -> bit 1, 2 -> bit 2 etc.
+# Load mask into D.
+MOV.A.B
+
+CMPI 00
+LDI.D 01
+JMPZ $check_key_mask_selected
+
+CMPI 01
+LDI.D 02
+JMPZ $check_key_mask_selected
+
+CMPI 02
+LDI.D 04
+JMPZ $check_key_mask_selected
+
+CMPI 03
+LDI.D 08
+JMPZ $check_key_mask_selected
+
+CMPI 04
+LDI.D 10
+JMPZ $check_key_mask_selected
+
+CMPI 05
+LDI.D 20
+JMPZ $check_key_mask_selected
+
+CMPI 06
+LDI.D 40
+JMPZ $check_key_mask_selected
+
+CMPI 07
+LDI.D 80
+JMPZ $check_key_mask_selected
+
+# All other keys always unpressed.
+
+LDI.A 00
+AND.A
+RET
+
+check_key_mask_selected:
+
+# Now check the bit.
+MOV.A.D
+AND.C
+
+RET
+
+# -- END
+
+########################
+# -- Skip Instruction if key VX pressed.
+########################
+
+skip_if_vx_pressed:
+
+CALL $check_key
+NJMPZ 03
+
+# Pressed
+CALL $skip_instruction
+
+RET
+
+# -- END
+
+########################
+# -- Skip Instruction if key VX not pressed.
+########################
+
+skip_if_vx_not_pressed:
+
+CALL $check_key
+NJMPNZ 03
+
+# Pressed
+CALL $skip_instruction
+
+RET
+
+# -- END
 
 # HCF
 FIRE

@@ -786,10 +786,14 @@ if __name__ == '__main__':
     emu.screen_out = PygameScreen()
 
     emu.trace = "trace.log"
-    while True:
-        try:
-            emu.step()
-        except:
-            emu.dump_trace()
-            time.sleep(5)
-            raise
+    try:
+        while True:
+            try:
+                emu.step()
+            except:
+                emu.dump_trace()
+                time.sleep(2)
+                raise
+    except KeyboardInterrupt:
+        print("Closing!")
+        emu.dump_trace()
