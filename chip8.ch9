@@ -334,6 +334,12 @@ FIRE
 
 clear_screen:
 CLRSCR
+# Also need to wipe in-memory screen
+LDX.HL D000
+LDI.(HL) 00
+INC.L
+NJMPNZ F9
+
 JMP $op_done
 
 subr_return:
@@ -1122,6 +1128,8 @@ RET
 # Sprite comes from register I.
 # Sprite pixels are XORed with screen pixels.
 # VF is set to 1 if any pixels flip from on to off, and 0 otherwise.
+# We maintain an in-memory representation of the screen at 0xD000 so we can XOR the pixels.
+# This is a pain because writes don't have to be byte-aligned.
 ########################
 
 draw_sprite:
@@ -1140,23 +1148,84 @@ MOV.B.(HL)
 LDX.HL $IL
 MOV.C.(HL)
 
+# VF = 0 by default.
+LDX.HL $VF
+LDI.(HL) 00
+
 draw_y_loop:
 
 # Get Pixels -> A
 MOV.HL.BC
 MOV.A.(HL)
 
-# Store BC (pixel ptr)
+# Store pixel pointer and raw X,Y
 PUSH.BC
+PUSH.DE
 
-# TODO: XOR logic.
+# So we currently have X, Y in D, E and Pixels in A.  BC is free.
+# Load Pixels into BC, and shift left until X is byte-aligned.
+LDI.B 00
+MOV.C.A
 
+draw_align_loop:
+# If X is aligned, exit.
+# Note: byte-aligned == least-significant 3 bits are 0
+MOV.A.D
+ANDI 07
+JMPZ $draw_align_loop_end
+
+# Not aligned, so shift left and increment X.
+CALL $shift_left_16
+INC.D
+
+# Loop
+JMP $draw_align_loop
+
+draw_align_loop_end:
+
+# So now we have the pixels split into B and C, byte-aligned.
+# X (in D) points to the coordinate of the second one.
+# Store off the pixel values while we do calculation.
+PUSH.B
+PUSH.C
+
+# Now we can get the memory address for X, Y -> BC
+CALL $get_xy_addr
+
+# Load back the pixels and XOR to update the memory screen.
+POP.A
+MOV.HL.BC
+XOR.(HL)
+
+# TODO: Update flag state.
+
+# Load the value and draw to actual screen.
 # For CHIP9 draw call we need X in C, Y in B and pixels in A.
+PUSH.BC
+MOV.A.(HL)
+MOV.C.D
+MOV.B.E
+DRAW
+POP.BC
+
+# Now get the second pixels and draw to X-8.
+# We know the target address will just be one less than last time.
+LDI.A 08
+SUB.D
+DEC.C
+POP.A
+MOV.HL.BC
+XOR.(HL)
+
+# TODO: Update flag state.
+
+MOV.A.(HL)
 MOV.C.D
 MOV.B.E
 DRAW
 
 # Loop counter.
+POP.DE
 POP.BC
 INX.BC
 INC.E
@@ -1167,6 +1236,61 @@ PUSH.A
 JMP $draw_y_loop
 
 # TODO: Set VF
+
+
+RET
+
+# -- END
+
+########################
+# -- Get's address of X,Y in in-memory screen representation.
+# Essentially this is 0xD000 + Y * 8 + X // 8
+# Note the screen is 32x64, and we pack 8 pixels per byte.
+# So the total screen takes up only 0x100 bytes.  Hence we only need to do 8-bit computation.
+# -- Clobbers B and C.
+# -- X, Y args in D, E are preserved.
+# -- Address returned in BC
+# Note: D MUST be byte-aligned.
+########################
+
+get_xy_addr:
+
+# Use B as accumulator.
+LDI.B 00
+
+# Add 8 multiples of Y.
+MOV.A.E
+ADD.B
+ADD.B
+ADD.B
+ADD.B
+ADD.B
+ADD.B
+ADD.B
+ADD.B
+
+# Subtract 8 from X until it hits 0, adding 1 each time.
+# Use C for tracking X.
+MOV.C.D
+
+get_xy_addrs_loop:
+
+# If == 0, break.
+MOV.A.C
+CMPI 00
+JMPZ $get_xy_addrs_loop_end
+
+# Else, sub 8, add 1 and loop.
+LDI.A 08
+SUB.C
+INC.B
+JMP $get_xy_addrs_loop
+
+get_xy_addrs_loop_end:
+
+# Now form the 16-bit address in BC.
+MOV.C.B
+LDI.B D0
 
 RET
 

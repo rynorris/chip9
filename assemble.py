@@ -61,6 +61,9 @@ OPCODES = {
 
     "ADDX.BC": "83", "ADDX.DE": "93", "ADDX.HL": "A3",
 
+    "SUB.B": "84", "SUB.C": "94", "SUB.D": "A4", "SUB.E": "B4",
+    "SUB.H": "C4", "SUB.L": "D4", "SUB.(HL)": "E4", "SUB.A": "F4",
+
     "INC.B": "03", "INC.C": "13", "INC.D": "23", "INC.E": "33",
     "INC.H": "43", "INC.L": "53", "INC.(HL)": "63", "INC.A": "73",
 
