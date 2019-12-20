@@ -553,6 +553,11 @@ class Chip9():
         x = to_signed(self.regget("C"))
         a = self.regget("A")
         mask = f"{a:08b}"
+
+        # HACK
+        if self.PC > 0x1000:
+            print(f"DRAW({x:02X}, {y:02X}) = {mask}")
+
         for ix, b in enumerate(mask):
             xx = x + ix
             if xx < 0:
@@ -783,7 +788,7 @@ if __name__ == '__main__':
 
     emu.screen_out = PygameScreen()
 
-    TRACE = True
+    TRACE = False
 
     if TRACE:
         emu.trace = "trace.log"

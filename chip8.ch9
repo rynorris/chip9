@@ -304,6 +304,11 @@ JMPZ $op_rsh_vx
 
 # TODO: More
 
+MOV.A.C
+ANDI 0F
+CMPI 0E
+JMPZ $op_lsh_vx
+
 FIRE
 
 first_byte_ex:
@@ -458,6 +463,11 @@ JMP $op_done
 op_rsh_vx:
 
 CALL $rsh_vx
+JMP $op_done
+
+op_lsh_vx:
+
+CALL $lsh_vx
 JMP $op_done
 
 op_set_delay:
@@ -1231,6 +1241,36 @@ RET
 
 # -- END
 
+########################
+# -- Shift VX left.
+########################
+
+lsh_vx:
+
+# Store X in D for later.
+MOV.D.B
+
+# Load VX -> BC
+MOV.A.B
+CALL $get_vx
+MOV.C.B
+LDI.B 00
+
+# LSH
+CALL $shift_left_16
+
+# Now B has the carry, and C has the shifted VX.
+MOV.A.D
+MOV.D.B
+MOV.B.C
+CALL $set_vx
+
+LDX.HL $VF
+MOV.(HL).D
+
+RET
+
+# -- END
 
 ########################
 # -- Shift Left 16
@@ -1536,7 +1576,7 @@ MOV.C.(HL)
 # Load mask into D.
 MOV.A.B
 
-CMPI 01
+CMPI 03
 # CHIP9 Up
 LDI.D 80
 JMPZ $check_key_mask_selected
@@ -1546,7 +1586,7 @@ CMPI 04
 LDI.D 40
 JMPZ $check_key_mask_selected
 
-CMPI 04
+CMPI 02
 # CHIP9 Down
 LDI.D 20
 JMPZ $check_key_mask_selected
@@ -1566,7 +1606,7 @@ CMPI 0F
 LDI.D 04
 JMPZ $check_key_mask_selected
 
-CMPI 0C
+CMPI 01
 # CHIP9 Start
 LDI.D 02
 JMPZ $check_key_mask_selected
