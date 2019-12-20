@@ -141,7 +141,13 @@ CLRSCR
 main_loop:
 
 # Spin to adjust timing.
-LDI.A 0x1F
+LDI.A 0xFF
+DEC.A
+NJMPNZ 0xFD
+LDI.A 0xFF
+DEC.A
+NJMPNZ 0xFD
+LDI.A 0xFF
 DEC.A
 NJMPNZ 0xFD
 
@@ -1114,7 +1120,7 @@ RET
 # -- END
 
 ########################
-# -- Sub VX from VY and store in VX
+# -- VX = VX - VY
 # Args come in as 0x8XY4
 ########################
 
@@ -1125,8 +1131,8 @@ CALL $load_vxy
 # Store off X, left in B.
 PUSH.B
 
-MOV.A.D
-SUB.E
+MOV.A.E
+SUB.D
 
 # Set carry
 NJMPC 04
@@ -1143,7 +1149,7 @@ CALL $set_vx
 
 # Store val.
 POP.A
-MOV.B.E
+MOV.B.D
 CALL $set_vx
 
 RET

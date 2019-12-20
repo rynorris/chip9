@@ -783,13 +783,34 @@ if __name__ == '__main__':
 
     emu.screen_out = PygameScreen()
 
-    emu.trace = "trace.log"
+    TRACE = True
+
+    if TRACE:
+        emu.trace = "trace.log"
+
+    target_hz = 3000000
+    target_frame_ms = 1000 / target_hz
+    steps = 0
+    t0 = time.time() * 1000
     ix = 0
     try:
         while True:
             try:
                 emu.step()
-                if emu.PC == 0xA04F:
+                steps += 1
+
+                if steps % 1000 == 0:
+                    t1 = time.time() * 1000
+                    dt = t1 - t0
+                    target_dt = steps * target_frame_ms
+                    lag = target_dt - dt
+                    if lag > 50:
+                        if not emu.booting:
+                            time.sleep(lag / 1000)
+                        steps = 0
+                        t0 = t1
+
+                if emu.PC == 0xA05D and TRACE:
                     s = ""
                     s += f"{emu.D:02X}{emu.E:02X}: {emu.B:02X}{emu.C:02X}"
                     s += "\n"
