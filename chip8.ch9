@@ -282,6 +282,11 @@ ANDI 0F
 CMPI 04
 JMPZ $op_add_vx_vy
 
+MOV.A.C
+ANDI 0F
+CMPI 05
+JMPZ $op_sub_vx_vy
+
 # TODO: More
 
 FIRE
@@ -422,6 +427,11 @@ JMP $op_done
 op_add_vx_vy:
 
 CALL $add_vx_vy
+JMP $op_done
+
+op_sub_vx_vy:
+
+CALL $sub_vx_vy
 JMP $op_done
 
 op_set_delay:
@@ -1089,6 +1099,43 @@ RET
 # -- END
 
 ########################
+# -- Sub VX from VY and store in VX
+# Args come in as 0x8XY4
+########################
+
+sub_vx_vy:
+
+CALL $load_vxy
+
+# Store off X, left in B.
+PUSH.B
+
+MOV.A.D
+SUB.E
+
+# Set carry
+NJMPC 04
+
+# No carry
+LDI.B 00
+NJMP 02
+
+# Carry
+LDI.B 01
+
+LDI.A 0F
+CALL $set_vx
+
+# Store val.
+POP.A
+MOV.B.E
+CALL $set_vx
+
+RET
+
+# -- END
+
+########################
 # -- Shift Left 16
 # Args:
 #  BC = value to shift.
@@ -1141,6 +1188,12 @@ PUSH.A
 
 # Load X, Y -> D, E
 CALL $load_vxy
+
+# Truncate X, Y.
+LDI.A 3F
+AND.D
+LDI.A 1F
+AND.E
 
 # Use BC as pixel ptr.
 LDX.HL $IH
@@ -1389,7 +1442,7 @@ CMPI 01
 LDI.D 80
 JMPZ $check_key_mask_selected
 
-CMPI 03
+CMPI 04
 # CHIP9 Left
 LDI.D 40
 JMPZ $check_key_mask_selected
@@ -1404,7 +1457,7 @@ CMPI 06
 LDI.D 10
 JMPZ $check_key_mask_selected
 
-CMPI 08
+CMPI 05
 # CHIP9 A
 LDI.D 08
 JMPZ $check_key_mask_selected
