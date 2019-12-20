@@ -1195,13 +1195,24 @@ CALL $get_xy_addr
 # Load back the pixels and XOR to update the memory screen.
 POP.A
 MOV.HL.BC
-XOR.(HL)
 
-# TODO: Update flag state.
+PUSH.BC
+
+# Need to set flag if any bits will change from 1 to 0.
+# In other words, if A & HL != 0.
+MOV.B.(HL)
+AND.B
+NJMPNZ 07
+# Zero, set flag.
+PUSH.HL
+LDX.HL $VF
+LDI.(HL) 01
+POP.HL
+
+XOR.(HL)
 
 # Load the value and draw to actual screen.
 # For CHIP9 draw call we need X in C, Y in B and pixels in A.
-PUSH.BC
 MOV.A.(HL)
 MOV.C.D
 MOV.B.E
@@ -1215,9 +1226,18 @@ SUB.D
 DEC.C
 POP.A
 MOV.HL.BC
-XOR.(HL)
 
-# TODO: Update flag state.
+# Need to set flag if any bits will change from 1 to 0.
+# In other words, if A & HL != 0.
+MOV.B.(HL)
+AND.B
+NJMPNZ 07
+# Zero, set flag.
+PUSH.HL
+LDX.HL $VF
+LDI.(HL) 01
+POP.HL
+XOR.(HL)
 
 MOV.A.(HL)
 MOV.C.D
@@ -1234,9 +1254,6 @@ DEC.A
 NJMPZ 04
 PUSH.A
 JMP $draw_y_loop
-
-# TODO: Set VF
-
 
 RET
 
@@ -1509,8 +1526,13 @@ RET
 
 set_bcd:
 
-# For now just set all digits to 0.
+# For now just set all digits to 0 except the smallest.
 # TODO: Implement.
+
+# VX -> A
+MOV.A.B
+CALL $get_vx
+MOV.A.B
 
 # I -> BC
 CALL $get_i
@@ -1519,7 +1541,10 @@ LDI.(HL) 00
 INX.HL
 LDI.(HL) 00
 INX.HL
-LDI.(HL) 00
+
+# Get units below 7.
+ANDI 07
+MOV.(HL).A
 
 RET
 
@@ -1573,6 +1598,8 @@ RET
 ########################
 # -- FONT DATA
 ########################
+
+FIRE
 
 font_sprites:
 11110000
