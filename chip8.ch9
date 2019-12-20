@@ -277,6 +277,10 @@ JMPZ $op_add_reg_to_i
 
 # TODO: More
 
+MOV.A.C
+CMPI 65
+JMPZ $op_load_registers
+
 FIRE
 
 clear_screen:
@@ -368,6 +372,11 @@ JMP $op_done
 op_skip_if_vx_not_pressed:
 
 CALL $skip_if_vx_not_pressed
+JMP $op_done
+
+op_load_registers:
+
+CALL $load_registers
 JMP $op_done
 
 op_done:
@@ -1140,6 +1149,53 @@ NJMPNZ 03
 
 # Pressed
 CALL $skip_instruction
+
+RET
+
+# -- END
+
+########################
+# -- Load registers.
+# BC = 0xFX55
+# Loads registers from V0 to VX with values in memory starting from I.
+########################
+
+load_registers:
+
+# Move X into D.
+MOV.A.B
+ANDI 0F
+MOV.D.A
+
+# Load I -> BC -> HL
+CALL $get_i
+MOV.HL.BC
+
+# Reg to set -> C
+LDI.C 00
+
+load_registers_loop:
+
+# Set register VD
+MOV.A.C
+MOV.B.(HL)
+# set_vx will clobber HL, so store it off.
+PUSH.HL
+CALL $set_vx
+POP.HL
+
+# Break if D == 0
+MOV.A.D
+CMPI 00
+JMPZ $load_registers_ret
+
+# Otherwise poke variables and loop.
+DEC.D
+INC.C
+INX.HL
+JMP $load_registers_loop
+
+load_registers_ret:
 
 RET
 
