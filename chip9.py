@@ -789,9 +789,22 @@ if __name__ == '__main__':
         while True:
             try:
                 emu.step()
+                if emu.PC == 0xA04F:
+                    s = ""
+                    s += f"{emu.D:02X}{emu.E:02X}: {emu.B:02X}{emu.C:02X}"
+                    s += "\n"
+                    for off in range(16):
+                        s += f"{emu.memory[0xE000+off]:02X} "
+
+                    s += "\n"
+                    for off in range(6):
+                        s += f"{emu.memory[0xE010+off]:02X} "
+                    s += "\n"
+                    print(s)
+
 
                 # Handle input every few instructions.
-                ix = (ix + 1) % 10000
+                ix = (ix + 1) % 2000
                 if ix == 0:
                     for event in pygame.event.get():
                         if event.type == pygame.KEYDOWN:

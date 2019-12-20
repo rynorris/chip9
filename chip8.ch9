@@ -141,7 +141,7 @@ CLRSCR
 main_loop:
 
 # Spin to adjust timing.
-LDI.A 0xAF
+LDI.A 0x1F
 DEC.A
 NJMPNZ 0xFD
 
@@ -849,6 +849,9 @@ RET
 
 load_vxy:
 
+# Store off X.
+PUSH.B
+
 # Get VX into D.
 MOV.A.B
 CALL $get_vx
@@ -868,6 +871,8 @@ MOV.A.B
 CALL $get_vx
 MOV.E.B
 MOV.B.A
+
+POP.B
 
 RET
 
@@ -1318,6 +1323,8 @@ XOR.(HL)
 
 # Load the value and draw to actual screen.
 # For CHIP9 draw call we need X in C, Y in B and pixels in A.
+LDI.A 0x3F
+AND.E
 MOV.A.(HL)
 MOV.C.D
 MOV.B.E
