@@ -25,6 +25,7 @@
 @Delay
 @DelayTick
 @Keys
+@Rand
 
 
 ###---START LOADER---###
@@ -127,6 +128,10 @@ LDI.A 0xAF
 DEC.A
 NJMPNZ 0xFD
 
+# Tick Rand
+LDX.HL $Rand
+INC.(HL)
+
 # Decrement delay timer.
 CALL $dec_delay
 
@@ -194,7 +199,11 @@ ANDI F0
 XORI A0
 JMPZ $op_set_i
 
-# TODO: More ops.
+# 0xCXNN
+MOV.A.B
+ANDI F0
+XORI C0
+JMPZ $op_get_rand
 
 # 0xDNNN
 MOV.A.B
@@ -275,11 +284,18 @@ JMPZ $op_get_delay
 CMPI 15
 JMPZ $op_set_delay
 
-# TODO: More
+# CHIP9 Doesn't have sound,  so skip.
+CMPI 18
+JMPZ $op_done
 
 CMPI 1E
 JMPZ $op_add_reg_to_i
 
+CMPI 29
+JMPZ $op_load_font_addr
+
+CMPI 33
+JMPZ $op_set_bcd
 
 # TODO: More
 
@@ -382,6 +398,21 @@ JMP $op_done
 op_load_registers:
 
 CALL $load_registers
+JMP $op_done
+
+op_set_bcd:
+
+CALL $set_bcd
+JMP $op_done
+
+op_load_font_addr:
+
+CALL $load_font_addr
+JMP $op_done
+
+op_get_rand:
+
+CALL $get_rand
 JMP $op_done
 
 op_done:
@@ -549,7 +580,7 @@ CMPI 03
 JMPZ $load_vx_addr_done
 
 LDX.HL $V4
-CMPI 05
+CMPI 04
 JMPZ $load_vx_addr_done
 
 LDX.HL $V5
@@ -614,6 +645,30 @@ set_vx:
 
 CALL $load_vx_addr
 MOV.(HL).B
+
+RET
+
+# -- END
+
+########################
+# -- Get Rand
+# BC = 0xCXNN
+# Set VX equal to NN & $Rand
+########################
+
+get_rand:
+
+# Load $Rand into A
+LDX.HL $Rand
+MOV.A.(HL)
+
+# Compute -> C
+AND.C
+
+# Store in VX
+MOV.A.B
+MOV.B.C
+CALL $set_vx
 
 RET
 
@@ -1213,6 +1268,108 @@ load_registers_ret:
 RET
 
 # -- END
+
+########################
+# -- Set BCD
+# Stores BCD form of VX in memory with highest digit at I.
+########################
+
+set_bcd:
+
+# For now just set all digits to 0.
+# TODO: Implement.
+
+# I -> BC
+CALL $get_i
+MOV.HL.BC
+LDI.(HL) 00
+INX.HL
+LDI.(HL) 00
+INX.HL
+LDI.(HL) 00
+
+RET
+
+# -- END
+
+########################
+# -- Load font addr
+# BC = 0xFX29
+# Sets I to the address of sprite for digit in VX.
+########################
+
+load_font_addr:
+
+# Digit -> A
+MOV.A.B
+CALL $get_vx
+MOV.A.B
+
+LDX.BC $font_sprite_0
+CMPI 00
+JMPZ $load_font_addr_ret
+
+LDX.BC $font_sprite_1
+CMPI 01
+JMPZ $load_font_addr_ret
+
+LDX.BC $font_sprite_2
+CMPI 02
+JMPZ $load_font_addr_ret
+
+LDX.BC $font_sprite_3
+CMPI 03
+JMPZ $load_font_addr_ret
+
+LDX.BC $font_sprite_4
+CMPI 04
+JMPZ $load_font_addr_ret
+
+load_font_addr_ret:
+
+RET
+
+# -- END
+
+
+########################
+# -- FONT DATA
+########################
+
+font_sprite_0:
+11110000
+10010000
+10010000
+10010000
+11110000
+
+font_sprite_1:
+00100000
+01100000
+00100000
+00100000
+01110000
+
+font_sprite_2:
+11110000
+00010000
+11110000
+10000000
+11110000
+
+font_sprite_3:
+11110000
+00010000
+11110000
+00010000
+11110000
+
+font_sprite_4:
+10010000
+10010000
+11110000
+00010000
+00010000
 
 # HCF
 FIRE

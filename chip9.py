@@ -836,6 +836,7 @@ if __name__ == '__main__':
                             elif event.key == pygame.K_s:
                                 # Select
                                 emu.key_byte &= ~0x01
+                        print(f"{emu.key_byte:08b}")
 
             except:
                 emu.dump_trace()

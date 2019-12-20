@@ -224,6 +224,10 @@ class Assembler():
             return Token("byte", s)
         elif len(s) == 4:
             return Token("word", s)
+        elif len(s) == 8:
+            val = int(s, 2)
+            hexval = f"{val:02X}"
+            return Token("byte", hexval)
         else:
             raise Exception(f"Cannot parse token: {s}")
 
