@@ -88,8 +88,6 @@ class PygameScreen():
             pygame.transform.scale(self.surface, (512, 512), self.screen)
             pygame.display.flip()
             self.last_draw = t
-            #time.sleep(0.02)
-
 
 
 class Chip9():
@@ -112,6 +110,7 @@ class Chip9():
         self.screen_out = None
         self.printix = 0
         self.booting = True
+        self.key_byte = 0x00
 
         self.operations = {
             # LDI
@@ -647,8 +646,7 @@ class Chip9():
 
     def memget(self, addr):
         if addr == 0xF000:
-            # WARN: Not implemented
-            return 0x0
+            return self.key_byte
         return self.memory[addr]
 
     def regset(self, name, val):
@@ -786,10 +784,59 @@ if __name__ == '__main__':
     emu.screen_out = PygameScreen()
 
     emu.trace = "trace.log"
+    ix = 0
     try:
         while True:
             try:
                 emu.step()
+
+                # Handle input every few instructions.
+                ix = (ix + 1) % 10000
+                if ix == 0:
+                    for event in pygame.event.get():
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_UP:
+                                emu.key_byte |= 0x80
+                            elif event.key == pygame.K_LEFT:
+                                emu.key_byte |= 0x40
+                            elif event.key == pygame.K_DOWN:
+                                emu.key_byte |= 0x20
+                            elif event.key == pygame.K_RIGHT:
+                                emu.key_byte |= 0x10
+                            elif event.key == pygame.K_z:
+                                # A
+                                emu.key_byte |= 0x08
+                            elif event.key == pygame.K_x:
+                                # B
+                                emu.key_byte |= 0x04
+                            elif event.key == pygame.K_a:
+                                # Start
+                                emu.key_byte |= 0x02
+                            elif event.key == pygame.K_s:
+                                # Select
+                                emu.key_byte |= 0x01
+                        elif event.type == pygame.KEYUP:
+                            if event.key == pygame.K_UP:
+                                emu.key_byte &= ~0x80
+                            elif event.key == pygame.K_LEFT:
+                                emu.key_byte &= ~0x40
+                            elif event.key == pygame.K_DOWN:
+                                emu.key_byte &= ~0x20
+                            elif event.key == pygame.K_RIGHT:
+                                emu.key_byte &= ~0x10
+                            elif event.key == pygame.K_z:
+                                # A
+                                emu.key_byte &= ~0x08
+                            elif event.key == pygame.K_x:
+                                # B
+                                emu.key_byte &= ~0x04
+                            elif event.key == pygame.K_a:
+                                # Start
+                                emu.key_byte &= ~0x02
+                            elif event.key == pygame.K_s:
+                                # Select
+                                emu.key_byte &= ~0x01
+
             except:
                 emu.dump_trace()
                 time.sleep(2)

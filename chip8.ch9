@@ -122,6 +122,11 @@ CLRSCR
 
 main_loop:
 
+# Spin to adjust timing.
+LDI.A 0xFF
+DEC.A
+NJMPNZ 0xFD
+
 # Decrement delay timer.
 CALL $dec_delay
 
@@ -1066,7 +1071,7 @@ MOV.A.B
 CALL $get_vx
 
 # Load key states -> C
-LDX.HL $Keys
+LDX.HL F000
 MOV.C.(HL)
 
 # Select a mask. (i.e. key mapping)
@@ -1074,36 +1079,44 @@ MOV.C.(HL)
 # Load mask into D.
 MOV.A.B
 
-CMPI 00
-LDI.D 01
-JMPZ $check_key_mask_selected
-
-CMPI 01
-LDI.D 02
-JMPZ $check_key_mask_selected
-
 CMPI 02
-LDI.D 04
-JMPZ $check_key_mask_selected
-
-CMPI 03
-LDI.D 08
+# CHIP9 Up
+LDI.D 80
 JMPZ $check_key_mask_selected
 
 CMPI 04
-LDI.D 10
+# CHIP9 Left
+LDI.D 40
 JMPZ $check_key_mask_selected
 
-CMPI 05
+CMPI 08
+# CHIP9 Down
 LDI.D 20
 JMPZ $check_key_mask_selected
 
 CMPI 06
-LDI.D 40
+# CHIP9 Right
+LDI.D 10
 JMPZ $check_key_mask_selected
 
-CMPI 07
-LDI.D 80
+CMPI 05
+# CHIP9 A
+LDI.D 08
+JMPZ $check_key_mask_selected
+
+CMPI 0F
+# CHIP9 B
+LDI.D 04
+JMPZ $check_key_mask_selected
+
+CMPI 0E
+# CHIP9 Start
+LDI.D 02
+JMPZ $check_key_mask_selected
+
+CMPI 0D
+# CHIP9 Select
+LDI.D 01
 JMPZ $check_key_mask_selected
 
 # All other keys always unpressed.
